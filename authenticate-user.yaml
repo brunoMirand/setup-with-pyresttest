@@ -1,0 +1,40 @@
+- config:
+    - testset: "Authenticate user"
+    - disable_ssl_certificate_validation: true
+    - timeout: 10
+
+- test:
+    - group: "[Successful POST /users]"
+    - name: "Create a new user"
+    - url: "/users"
+    - method: "POST"
+    - body: '{
+        "name": "my name",
+        "nick_name": "e2e",
+        "email": "fake@gmail.com"
+        "idempotency_key": "{{hash}}"
+    }'
+    - headers:
+        - Content-Type: "application/json"
+        - X-Origin: "e2e"
+    - expected_status: [200]
+    - validators:
+        - compare:
+            jsonpath_mini: "name"
+            comparator: "eq"
+            expected: "my name"
+    - extract_binds:
+       - 'id': {'jsonpath_mini': 'id'}
+
+- test:
+    - group: "[Successful GET /users/{id}]"
+    - name: "Get user by id"
+    - url: {'template': "/users/$id"}
+    - method: "GET"
+    - expected_status: [200]
+    - validators:
+        - compare: {jsonpath_mini: 'id', comparator: 'str_eq', expected: {template: '$id'}}
+        - compare:
+            jsonpath_mini: "email"
+            comparator: "eq"
+            expected: "fake@gmail.com"
